@@ -45,7 +45,7 @@ class Decoder(nn.Module):
         self.gru = nn.GRU(encode_dim, 500, 4, batch_first=True)  # (B, Seq, Feature)
         self.seq = TimeDistributed(nn.Sequential(
             nn.Linear(500, char),
-            nn.Softmax(dim=1)
+            nn.Softmax()
         ))
 
     def forward(self, z):
@@ -115,15 +115,15 @@ def validate_model(val_loader, model):
 # data configuration
 df = pd.read_table("./data/train.txt", header=None)
 df.columns = ['smiles']
-smiles = np.array(df.smiles[0:100])
-smiles = ['C(C)C', 'CFCC', 'C1cccc1c', 'CC(=O)']
+#smiles = np.array(df.smiles[0:10])
+smiles = ['COC', 'O1cccc1c', 'CC(=O)', 'CC', 'C(=O)']
 
-opt = namedtuple('opt', field_names=['n_epochs', 'batch_size', 'lr', 'b1', 'b2'
-                                                                           'length', 'dict_size', 'channels',
+opt = namedtuple('opt', field_names=['epochs', 'batch_size', 'lr', 'b1', 'b2',
+                                     'length', 'dict_size', 'channels',
                                      'sample_interval'])
 
-opt = opt(n_epochs=10, batch_size=1, lr=0.002, b1=0.5, b2=0.999, n_cpu=2,
-          latent_dim=100, length=120, dict_size=35,
+opt = opt(epochs=100, batch_size=2, lr=0.002, b1=0.5, b2=0.999,
+          length=120, dict_size=35,
           channels=1, sample_interval=300)
 
 vae = ChemVAE()
