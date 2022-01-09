@@ -1,28 +1,74 @@
-import numpy as np
 import re
-import torch.nn as nn
-
 from typing import Dict
 
+import numpy as np
+import torch.nn as nn
+
 zinc_list = [
-    "7", "6", "o", "]", "3", "s", "(", "-", "S", "/", "B", "4", "[", ")", "#", "I", "l", "O", "H", "c", "1",
-    "@", "=", "n", "P", "8", "C", "2", "F", "5", "r", "N", "+", "\\", " "]
+    "7",
+    "6",
+    "o",
+    "]",
+    "3",
+    "s",
+    "(",
+    "-",
+    "S",
+    "/",
+    "B",
+    "4",
+    "[",
+    ")",
+    "#",
+    "I",
+    "l",
+    "O",
+    "H",
+    "c",
+    "1",
+    "@",
+    "=",
+    "n",
+    "P",
+    "8",
+    "C",
+    "2",
+    "F",
+    "5",
+    "r",
+    "N",
+    "+",
+    "\\",
+    " ",
+]
 char2id = dict((c, i) for i, c in enumerate(zinc_list))
 id2char = dict((i, c) for i, c in enumerate(zinc_list))
 
 
-def pad_smile(string: str, max_len: int, padding: str = 'right') -> str:
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+
+def pad_smile(string: str, max_len: int, padding: str = "right") -> str:
     if len(string) <= max_len:
-        if padding == 'right':
+        if padding == "right":
             return string + " " * (max_len - len(string))
-        elif padding == 'left':
+        elif padding == "left":
             return " " * (max_len - len(string)) + string
-        elif padding == 'none':
+        elif padding == "none":
             return string
 
 
-def smiles_to_hot(smiles: list, max_len: int = 120, padding: str = 'right',
-                  char_to_id: Dict[str, int] = char2id) -> np.ndarray:
+def smiles_to_hot(
+    smiles: list,
+    max_len: int = 120,
+    padding: str = "right",
+    char_to_id: Dict[str, int] = char2id,
+) -> np.ndarray:
     """smiles list into one-hot tensors.
 
     :param smiles: SMILES list
@@ -43,7 +89,9 @@ def smiles_to_hot(smiles: list, max_len: int = 120, padding: str = 'right',
     return hot_x
 
 
-def smiles_to_hot2(smiles: str, max_len: int = 120, char_to_id: Dict[str, int] = char2id) -> np.ndarray:
+def smiles_to_hot2(
+    smiles: str, max_len: int = 120, char_to_id: Dict[str, int] = char2id
+) -> np.ndarray:
     hot_x = np.zeros((max_len, len(char_to_id)), dtype=np.float32)
     for node_id, char in enumerate(smiles):
         hot_x[node_id, char_to_id[char]] = 1
@@ -58,7 +106,7 @@ def hot_to_smiles(hot_x: np.ndarray, id2char: Dict[int, str] = id2char) -> list:
     :return: smiles list
     """
     smiles = ["".join([id2char[np.argmax(j)] for j in x]) for x in hot_x]
-    smiles = [re.sub(' ', '', smi) for smi in smiles]  # paddingを消す
+    smiles = [re.sub(" ", "", smi) for smi in smiles]  # paddingを消す
     return smiles
 
 
@@ -69,13 +117,12 @@ def smiles2one_hot_chars(smi_list: list) -> list:
     """
     char_lists = [list(smi) for smi in smi_list]
     chars = list(set([char for sub_list in char_lists for char in sub_list]))
-    chars.append(' ')
+    chars.append(" ")
 
     return chars
 
 
 class Repeat(nn.Module):
-
     def __init__(self, rep):
         super(Repeat, self).__init__()
 
@@ -91,7 +138,6 @@ class Repeat(nn.Module):
 
 
 class TimeDistributed(nn.Module):
-
     def __init__(self, module, batch_first=True):
         super(TimeDistributed, self).__init__()
         self.module = module
@@ -121,14 +167,12 @@ class TimeDistributed(nn.Module):
 if __name__ == "__main__":
     import pandas as pd
 
-
     def test_recon():
         df = pd.read_table("./data/train.txt", header=None).iloc[0:100]
-        df.columns = ['smiles']
+        df.columns = ["smiles"]
 
         hot_x = smiles_to_hot(df.smiles)
         s = hot_to_smiles(hot_x, id2char)
         print(s)
-
 
     test_recon()
