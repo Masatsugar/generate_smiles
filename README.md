@@ -8,3 +8,4 @@ Generative models for molecular generation in PyTorch
 * https://github.com/aspuru-guzik-group/chemical_vae
 * https://github.com/cxhernandez/molencoder
 * https://github.com/maxhodak/keras-molecules
+* https://github.com/BenevolentAI/guacamol_baselines
