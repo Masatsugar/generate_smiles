@@ -16,9 +16,13 @@ generate_smiles/
 │       ├── chem_vae.py           # Conv1d encoder + GRU decoder VAE
 │       ├── chem_gan.py           # Generator/Discriminator GAN
 │       └── chemutils.py          # Shared utilities (one-hot encoding, padding, custom layers)
+├── tests/
+│   ├── test_smiles_char_dict.py  # SmilesCharDictionary tests
+│   ├── test_chemutils.py         # Utility function and layer tests
+│   └── test_models.py            # Model instantiation and forward pass tests
 ├── data/
 │   └── train.txt                 # Training corpus (~380K SMILES strings)
-├── molenv.py                     # Placeholder module
+├── pyproject.toml                # Project config, dependencies, tool settings
 ├── .flake8                       # Flake8 config
 ├── .pre-commit-config.yaml       # Pre-commit hooks config
 └── README.md
@@ -32,29 +36,49 @@ generate_smiles/
 - **`models/customs/chem_gan.py`** — `Generator` (Linear+GRU) and `Discriminator` (Conv1d).
 - **`models/customs/chemutils.py`** — `smiles_to_hot()`, `hot_to_smiles()`, `pad_smile()`, `TimeDistributed`, `Repeat` layers, `dotdict`.
 
-## Running Code
+## Setup & Running
 
-No package installation needed. Run modules directly:
+Uses **uv** for dependency management. Python 3.10+.
 
 ```bash
-python models/rnn_model.py            # Load pretrained model, sample 64 SMILES
-python models/customs/chem_vae.py     # Train/validate VAE
-python models/customs/chem_gan.py     # Train GAN
-python models/customs/chemutils.py    # Test reconstruction utilities
+uv sync --group dev     # Install all dependencies including dev tools
+uv run python -m pytest # Run tests
+```
+
+Run modules directly:
+
+```bash
+uv run python models/rnn_model.py            # Load pretrained model, sample 64 SMILES
+uv run python models/customs/chem_vae.py     # Train/validate VAE
+uv run python models/customs/chem_gan.py     # Train GAN
+uv run python models/customs/chemutils.py    # Test reconstruction utilities
 ```
 
 ## Dependencies
 
-Python 3.6+ with: `torch`, `torchvision`, `numpy`, `pandas`. No `requirements.txt` exists — install manually. GPU optional (code checks `torch.cuda.is_available()`).
+Defined in `pyproject.toml`. Core: `torch>=2.0`, `torchvision>=0.15`, `numpy>=1.24`, `pandas>=2.0`. Dev: `pytest`, `black`, `isort`, `flake8`, `mypy`, `pre-commit`. GPU optional (code checks `torch.cuda.is_available()`).
+
+## Testing
+
+Run the test suite with pytest:
+
+```bash
+uv run python -m pytest tests/ -v
+```
+
+38 tests covering:
+- `test_smiles_char_dict.py` — encoding/decoding, allowed symbols, matrix conversion
+- `test_chemutils.py` — padding, one-hot encoding roundtrip, dotdict, Repeat, TimeDistributed
+- `test_models.py` — forward passes for SmilesRnn, ActorCritic, Encoder, Decoder, ChemVAE, Generator, Discriminator
 
 ## Code Style & Linting
 
 Pre-commit hooks are configured (`.pre-commit-config.yaml`):
 
-- **black** (21.9b0) — formatting (target: Python 3)
-- **isort** (5.10.1) — import sorting
-- **flake8** (4.0.1) — linting (max-line-length=120, ignores: E203, E501, C901, W503, F401)
-- **mypy** (0.910) — type checking
+- **black** — formatting (line-length=120, target: Python 3.10+)
+- **isort** — import sorting (black profile)
+- **flake8** — linting (max-line-length=120, ignores: E203, E501, C901, W503, F401)
+- **mypy** — type checking
 - Standard hooks: trailing-whitespace, check-docstring-first, check-added-large-files, detect-private-key
 
 Install hooks: `pre-commit install`
@@ -67,17 +91,9 @@ Install hooks: `pre-commit install`
 - Type hints used in function signatures
 - Docstrings with Args/Returns sections for public APIs
 
-## Testing
-
-No formal test suite exists. Modules contain `__main__` blocks that serve as usage examples and smoke tests.
-
-## CI/CD
-
-No CI/CD pipelines configured. No Docker setup.
-
 ## Important Notes
 
 - The pretrained model file (`models/pretrained/model_final_0.473.pt`, ~101MB) is tracked in git. Do not re-add or duplicate large binary files.
 - Training data is in `data/train.txt` (one SMILES per line, ~9.6MB).
 - The `.gitignore` excludes `/tmp/`, `/upload/`, virtual envs, and standard Python artifacts.
-- No `requirements.txt` or `pyproject.toml` — dependency versions are not pinned.
+- Imports in `customs/` modules use absolute paths (e.g., `from models.customs.chemutils import ...`). Run scripts from the project root.
