@@ -137,7 +137,7 @@ def load_model(model_definition, model_weights, device, copy_to_cpu=True):
     raw_dict = json.loads(json_in)
     model = SmilesRnn(**raw_dict)
     map_location = lambda storage, loc: storage if copy_to_cpu else None
-    model.load_state_dict(torch.load(model_weights, map_location))
+    model.load_state_dict(torch.load(model_weights, map_location=map_location, weights_only=True))
     return model.to(device)
 
 

@@ -4,9 +4,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from chemutils import *
-from torch.autograd import Variable
 from torch.utils.data import DataLoader, TensorDataset
+
+from models.customs.chemutils import (
+    Repeat,
+    TimeDistributed,
+    char2id,
+    dotdict,
+    hot_to_smiles,
+    id2char,
+    smiles_to_hot,
+)
 
 
 class Encoder(nn.Module):
@@ -48,7 +56,7 @@ class Decoder(nn.Module):
         self.repeat_vector = Repeat(o)
         # self.embedding = nn.Embedding(hidden_dim, hidden_dim)
         self.gru = nn.GRU(encode_dim, 500, 4, batch_first=True)  # (B, Seq, Feature)
-        self.seq = TimeDistributed(nn.Sequential(nn.Linear(500, char), nn.Softmax()))
+        self.seq = TimeDistributed(nn.Sequential(nn.Linear(500, char), nn.Softmax(dim=-1)))
 
     def forward(self, z):
         out = F.relu(self.fc3(z))
@@ -90,7 +98,7 @@ def loss_function(recon_x, x, mu, logvar):
 def train_model(train_loader, model, optimizer, print_every=200):
     model.train()
     for t, (x, label) in enumerate(train_loader):
-        x_var = Variable(x).cuda()
+        x_var = x.cuda()
         recon_batch, mu, logvar = model(x_var)
         loss = loss_function(recon_batch, x_var, mu, logvar)
         if (t + 1) % print_every == 0:
@@ -105,7 +113,7 @@ def validate_model(val_loader, model):
     model.eval()
     avg_val_loss = 0.0
     for t, (x, y) in enumerate(val_loader):
-        x_var = Variable(x).cuda()
+        x_var = x.cuda()
         recon_batch, mu, logvar = model(x_var)
         loss = loss_function(recon_batch, x_var, mu, logvar)
         avg_val_loss += loss.data

@@ -1,7 +1,6 @@
 # Vanilla GAN
 # https://github.com/eriklindernoren/PyTorch-GAN/blob/master/implementations/gan/gan.py
 import os
-from collections import namedtuple
 
 import numpy as np
 import pandas as pd
@@ -9,18 +8,24 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import torchvision.transforms as transforms
-from chemutils import *
-from torch.autograd import Variable
 from torch.utils.data import DataLoader, TensorDataset
-from torchvision.utils import save_image
+
+from models.customs.chemutils import (
+    Repeat,
+    TimeDistributed,
+    char2id,
+    dotdict,
+    hot_to_smiles,
+    id2char,
+    smiles_to_hot,
+)
 
 
 class Generator(nn.Module):
-    def __init__(self, o=120, char=35):
+    def __init__(self, latent_dim=100, o=120, char=35):
         super(Generator, self).__init__()
 
-        self.model = nn.Sequential(nn.Linear(opt.latent_dim, 128))
+        self.model = nn.Sequential(nn.Linear(latent_dim, 128))
         self.repeat_vector = Repeat(o)
         # self.embedding = nn.Embedding(hidden_dim, hidden_dim)
         self.gru = nn.GRU(128, 200, 3, batch_first=True)  # (B, Seq, Feature)
@@ -88,7 +93,7 @@ if __name__ == "__main__":
     adversarial_loss = torch.nn.BCELoss()
 
     # Initialize generator and discriminator
-    generator = Generator()
+    generator = Generator(latent_dim=opt.latent_dim)
     discriminator = Discriminator()
 
     if cuda:
@@ -119,19 +124,17 @@ if __name__ == "__main__":
     for epoch in range(opt.n_epochs):
         for i, (imgs, _) in enumerate(dataloader):
             # Adversarial ground truths
-            valid = Variable(Tensor(imgs.size(0), 1).fill_(1.0), requires_grad=False)
-            fake = Variable(Tensor(imgs.size(0), 1).fill_(0.0), requires_grad=False)
+            valid = Tensor(imgs.size(0), 1).fill_(1.0)
+            fake = Tensor(imgs.size(0), 1).fill_(0.0)
 
             # Configure input
-            real_imgs = Variable(imgs.type(Tensor))
+            real_imgs = imgs.type(Tensor)
 
             #  Train Generator
             optimizer_G.zero_grad()
 
             # Sample noise as generator input
-            z = Variable(
-                Tensor(np.random.normal(0, 1, (imgs.shape[0], opt.latent_dim)))
-            )
+            z = Tensor(np.random.normal(0, 1, (imgs.shape[0], opt.latent_dim)))
 
             # Generate a batch of images
             gen_imgs = generator(z)
